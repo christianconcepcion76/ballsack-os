@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ballsack OS</title>
+<style>
+  :root{
+    --bg1:#1a2b4a;
+    --bg2:#0d1626;
+    --taskbar:#151f33;
+    --accent:#5cc8ff;
+    --accent2:#ffb454;
+    --window:#e8edf5;
+    --window-header:#2b3f66;
+    --text-dark:#1c2331;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: radial-gradient(circle at 30% 20%, var(--bg1), var(--bg2) 70%);
+    overflow:hidden;
+    color:#fff;
+  }
+  #desktop{
+    position:relative;
+    width:100%;
+    height:calc(100% - 48px);
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    flex-wrap:wrap;
+    gap:22px;
+    align-content:flex-start;
+  }
+  .icon{
+    width:84px;
+    text-align:center;
+    cursor:pointer;
+    user-select:none;
+    padding:6px;
+    border-radius:8px;
+    transition:background .15s ease;
+  }
+  .icon:hover, .icon:active{ background:rgba(255,255,255,0.12); }
+  .icon .emoji{
+    font-size:34px;
+    display:block;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.4));
+  }
+  .icon .label{
+    font-size:12px;
+    margin-top:4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.7);
+    line-height:1.2;
+  }
+
+  .window{
+    position:absolute;
+    top:80px;
+    left:120px;
+    width:380px;
+    max-width:88vw;
+    background:var(--window);
+    border-radius:10px;
+    box-shadow:0 20px 50px rgba(0,0,0,.45);
+    overflow:hidden;
+    display:none;
+    color:var(--text-dark);
+  }
+  .window.open{ display:block; }
+  .window-header{
+    background:linear-gradient(90deg, var(--window-header), #3b5a94);
+    color:#fff;
+    padding:9px 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:grab;
+    font-size:14px;
+    font-weight:600;
+  }
+  .window-header .btns{ display:flex; gap:6px; }
+  .wbtn{
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.15);
+    cursor:pointer;
+    font-size:12px;
+  }
+  .wbtn:hover{ background:rgba(255,255,255,.3); }
+  .window-body{
+    padding:16px;
+    font-size:14px;
+    line-height:1.5;
+    max-height:60vh;
+    overflow-y:auto;
+  }
+  .window-body h3{ margin-top:0; }
+  .window-body button, .window-body input[type=range]{
+    width:100%;
+  }
+  .fake-btn{
+    display:inline-block;
+    background:var(--window-header);
+    color:#fff;
+    border:none;
+    padding:8px 14px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    margin-top:8px;
+  }
+  .fake-btn:hover{ opacity:.88; }
+
+  #taskbar{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    height:48px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background:var(--taskbar);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding-left:10px;
+    padding-right:14px;
+    box-shadow:0 -2px 10px rgba(0,0,0,.4);
+  }
+  #startBtn{
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#0d1626;
+    font-weight:800;
+    border:none;
+    border-radius:6px;
+    padding:8px 14px;
+    cursor:pointer;
+    font-size:13px;
+    letter-spacing:.3px;
+  }
+  #startBtn:hover{ filter:brightness(1.08); }
+  #taskItems{ display:flex; gap:8px; flex:1; overflow-x:auto; }
+  .task-chip{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.15);
+    color:#fff;
+    padding:6px 10px;
+    border-radius:6px;
+    font-size:12px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  #clock{ font-size:13px; color:#cfe3ff; min-width:64px; text-align:right; }
+
+  #startMenu{
+    position:fixed;
+    bottom:48px;
+    left:6px;
+    width:220px;
+    background:var(--window);
+    color:var(--text-dark);
+    border-radius:10px 10px 10px 10px;
+    box-shadow:0 10px 40px rgba(0,0,0,.5);
+    display:none;
+    overflow:hidden;
+    padding:6px;
+  }
+  #startMenu.open{ display:block; }
+  #startMenu .sm-header{
+    background:var(--window-header);
+    color:#fff;
+    padding:12px;
+    border-radius:6px;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  #startMenu .sm-item{
+    padding:9px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  #startMenu .sm-item:hover{ background:#dde6f5; }
+
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){ --bg1:#a9d0ff; --bg2:#5c86c4; }
+  }
+</style>
+</head>
+<body>
+
+<div id="desktop">
+  <div class="icon" onclick="openWin('about')">
+    <span class="emoji">🥜</span>
+    <div class="label">About Ballsack OS</div>
+  </div>
+  <div class="icon" onclick="openWin('terminal')">
+    <span class="emoji">🖥️</span>
+    <div class="label">Ball-inal</div>
+  </div>
+  <div class="icon" onclick="openWin('settings')">
+    <span class="emoji">⚙️</span>
+    <div class="label">Settings</div>
+  </div>
+  <div class="icon" onclick="openWin('recycle')">
+    <span class="emoji">🗑️</span>
+    <div class="label">Recycle Sack</div>
+  </div>
+  <div class="icon" onclick="openWin('update')">
+    <span class="emoji">🔄</span>
+    <div class="label">Update Check</div>
+  </div>
+</div>
+
+<!-- Windows -->
+<div class="window" id="win-about" style="top:70px; left:60px;">
+  <div class="window-header" onmousedown="startDrag(event,'win-about')">
+    <span>🥜 About Ballsack OS</span>
+    <div class="btns"><div class="wbtn" onclick="closeWin('about')">✕</div></div>
+  </div>
+  <div class="window-body">
+    <h3>Ballsack OS 1.0 "Scrotum Lake"</h3>
+    <p>The world's most unnecessarily named operating system. Built on nothing, backed by nothing, and somehow still crashes less than Windows ME.</p>
+    <p>System uptime: however long you've had this tab open.</p>
+    <button class="fake-btn" onclick="alert('There is no license. There never was.')">View License</button>
+  </div>
+</div>
+
+<div class="window" id="win-terminal" style="top:110px; left:140px; width:380px;">
+  <div class="window-header" onmousedown="startDrag(event,'win-terminal')">
+    <span>🖥️ Ball-inal</span>
+    <div class="btns"><div class="wbtn" onclick="closeWin('terminal')">✕</div></div>
+  </div>
+  <div class="window-body" style="background:#0d1420; color:#7CFC9C; font-family:monospace; border-radius:0 0 10px 10px;">
+    <div id="termOutput" style="white-space:pre-wrap; min-height:120px;">ballsack-os:~$ boot sequence complete
+ballsack-os:~$ loading nuts.dll ... OK
+ballsack-os:~$ _</div>
+    <input id="termInput" type="text" placeholder="type a command..." style="margin-top:8px; width:100%; background:#0d1420; border:1px solid #2a3a2f; color:#7CFC9C; padding:6px; font-family:monospace;" onkeydown="if(event.key==='Enter')runCmd()">
+  </div>
+</div>
+
+<div class="window" id="win-settings" style="top:150px; left:200px;">
+  <div class="window-header" onmousedown="startDrag(event,'win-settings')">
+    <span>⚙️ Settings</span>
+    <div class="btns"><div class="wbtn" onclick="closeWin('settings')">✕</div></div>
+  </div>
+  <div class="window-body">
+    <h3>Sack Sensitivity</h3>
+    <input type="range" min="0" max="100" value="50" oninput="document.getElementById('sackVal').innerText=this.value">
+    <p>Current value: <b id="sackVal">50</b>%</p>
+    <h3>Wallpaper</h3>
+    <button class="fake-btn" onclick="cycleBg()">Cycle Wallpaper</button>
+  </div>
+</div>
+
+<div class="window" id="win-recycle" style="top:190px; left:80px;">
+  <div class="window-header" onmousedown="startDrag(event,'win-recycle')">
+    <span>🗑️ Recycle Sack</span>
+    <div class="btns"><div class="wbtn" onclick="closeWin('recycle')">✕</div></div>
+  </div>
+  <div class="window-body">
+    <p>It's empty. Just like your last download.</p>
+  </div>
+</div>
+
+<div class="window" id="win-update" style="top:220px; left:160px;">
+  <div class="window-header" onmousedown="startDrag(event,'win-update')">
+    <span>🔄 Update Check</span>
+    <div class="btns"><div class="wbtn" onclick="closeWin('update')">✕</div></div>
+  </div>
+  <div class="window-body">
+    <p id="updateStatus">Checking for updates...</p>
+    <button class="fake-btn" onclick="fakeUpdate()">Check Again</button>
+  </div>
+</div>
+
+<div id="taskbar">
+  <button id="startBtn" onclick="toggleStart()">🥜 Start</button>
+  <div id="taskItems"></div>
+  <div id="clock">--:--</div>
+</div>
+
+<div id="startMenu">
+  <div class="sm-header">Ballsack OS</div>
+  <div class="sm-item" onclick="openWin('about'); toggleStart()">🥜 About</div>
+  <div class="sm-item" onclick="openWin('terminal'); toggleStart()">🖥️ Ball-inal</div>
+  <div class="sm-item" onclick="openWin('settings'); toggleStart()">⚙️ Settings</div>
+  <div class="sm-item" onclick="openWin('recycle'); toggleStart()">🗑️ Recycle Sack</div>
+  <div class="sm-item" onclick="openWin('update'); toggleStart()">🔄 Update Check</div>
+  <div class="sm-item" onclick="alert('You cannot shut down that which was never truly on.')">⏻ Shut Down</div>
+</div>
+
+<script>
+  const openWins = new Set();
+
+  function openWin(name){
+    const el = document.getElementById('win-'+name);
+    el.classList.add('open');
+    el.style.zIndex = ++zTop;
+    openWins.add(name);
+    renderTasks();
+  }
+  function closeWin(name){
+    document.getElementById('win-'+name).classList.remove('open');
+    openWins.delete(name);
+    renderTasks();
+  }
+  function renderTasks(){
+    const box = document.getElementById('taskItems');
+    box.innerHTML = '';
+    openWins.forEach(name=>{
+      const chip = document.createElement('div');
+      chip.className = 'task-chip';
+      chip.textContent = name;
+      chip.onclick = ()=>{ 
+        const el = document.getElementById('win-'+name);
+        el.style.zIndex = ++zTop;
+      };
+      box.appendChild(chip);
+    });
+  }
+
+  let zTop = 10;
+
+  function toggleStart(){
+    document.getElementById('startMenu').classList.toggle('open');
+  }
+  document.addEventListener('click', (e)=>{
+    const menu = document.getElementById('startMenu');
+    const btn = document.getElementById('startBtn');
+    if(menu.classList.contains('open') && !menu.contains(e.target) && e.target!==btn){
+      menu.classList.remove('open');
+    }
+  });
+
+  // Dragging
+  let dragState = null;
+  function startDrag(e, id){
+    const el = document.getElementById(id);
+    el.style.zIndex = ++zTop;
+    const rect = el.getBoundingClientRect();
+    dragState = { id, offX: e.clientX - rect.left, offY: e.clientY - rect.top };
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDrag);
+  }
+  function onDrag(e){
+    if(!dragState) return;
+    const el = document.getElementById(dragState.id);
+    el.style.left = Math.max(0, e.clientX - dragState.offX) + 'px';
+    el.style.top = Math.max(0, e.clientY - dragState.offY) + 'px';
+  }
+  function stopDrag(){
+    dragState = null;
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', stopDrag);
+  }
+
+  // Clock
+  function tick(){
+    const d = new Date();
+    document.getElementById('clock').textContent =
+      d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  }
+  tick();
+  setInterval(tick, 1000*10);
+
+  // Terminal
+  const responses = {
+    'help': "commands: help, whoami, ls, sudo, fortune, clear",
+    'whoami': "you are the proud, slightly confused owner of Ballsack OS",
+    'ls': "nuts.dll  sack.sys  dreams.txt  regrets.log",
+    'sudo': "nice try. permission granted for absolutely nothing.",
+    'fortune': "A wise sack once said: 'this too shall dangle.'",
+    'clear': null
+  };
+  function runCmd(){
+    const input = document.getElementById('termInput');
+    const out = document.getElementById('termOutput');
+    const cmd = input.value.trim();
+    input.value = '';
+    if(cmd.toLowerCase() === 'clear'){
+      out.textContent = 'ballsack-os:~$ _';
+      return;
+    }
+    const resp = responses[cmd.toLowerCase()] || `command not found: ${cmd}`;
+    out.textContent += `\nballsack-os:~$ ${cmd}\n${resp}\nballsack-os:~$ _`;
+    out.scrollTop = out.scrollHeight;
+  }
+
+  // Settings wallpaper cycle
+  const bgs = [
+    'radial-gradient(circle at 30% 20%, #1a2b4a, #0d1626 70%)',
+    'radial-gradient(circle at 70% 30%, #4a1a2b, #260d16 70%)',
+    'radial-gradient(circle at 50% 60%, #1a4a2b, #0d2616 70%)',
+    'radial-gradient(circle at 20% 80%, #4a3a1a, #26190d 70%)'
+  ];
+  let bgIdx = 0;
+  function cycleBg(){
+    bgIdx = (bgIdx+1) % bgs.length;
+    document.body.style.background = bgs[bgIdx];
+  }
+
+  // Fake update
+  function fakeUpdate(){
+    const el = document.getElementById('updateStatus');
+    el.textContent = 'Checking for updates...';
+    setTimeout(()=>{
+      el.textContent = 'Your sack is fully up to date. Version 1.0.0-final-final(2).';
+    }, 900);
+  }
+  setTimeout(fakeUpdate, 400);
+
+  // open About by default
+  openWin('about');
+</script>
+
+</body>
+</html>
